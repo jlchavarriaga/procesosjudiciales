@@ -1,46 +1,31 @@
-import requests
+import time
 
-url = 'https://api.funcionjudicial.gob.ec/EXPEL-CONSULTA-CAUSAS-SERVICE/api/consulta-causas/informacion/buscarCausas?page=1&size=20'
-
-payload = {
-    "numeroCausa": "",
-    "actor": {
-        "cedulaActor": "0968599020001",
-        "nombreActor": ""
-    },
-    "demandado": {
-        "cedulaDemandado": "",
-        "nombreDemandado": ""
-    },
-    "provincia": "",
-    "numeroFiscalia": "",
-    "recaptcha": "verdad",
-    "first": 1,
-    "pageSize": 10
-}
-
-headers = {
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Encoding': 'gzip, deflate, br, zstd',
-    'Accept-Language': 'es-419,es-US;q=0.9,es;q=0.8,en;q=0.7,pt;q=0.6',
-    'Connection': 'keep-alive',
-    'Content-Length': str(len(str(payload))),
-    'Content-Type': 'application/json',
-    'Host': 'api.funcionjudicial.gob.ec',
-    'Origin': 'https://procesosjudiciales.funcionjudicial.gob.ec',
-    'Referer': 'https://procesosjudiciales.funcionjudicial.gob.ec/',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
-}
-
-response = requests.post(url, json=payload, headers=headers)
+from funciones_consulta import obtener_numero_registros, obtener_registros
 
 
-if response.status_code == 200:
-    print('Solicitud enviada con éxito')
-    print('Respuesta:', response.json())
-else:
-    print('Error en la solicitud:', response.status_code)
-    print('Detalle:', response.text)
+def main(cedula_actor='', cedula_demandado=''):
+    total_registros = obtener_numero_registros(cedula_actor, cedula_demandado)
+    if total_registros == 0:
+        print("No se encontraron registros.")
+        return
+
+    tamano_pagina = 10
+    total_paginas = (total_registros + tamano_pagina - 1) // tamano_pagina  # Redondeo hacia arriba
+
+    print(f"Total de registros: {total_registros}")
+    print(f"Total de páginas: {total_paginas}")
+
+    for pagina in range(1, total_paginas + 1):
+        registros = obtener_registros(pagina, tamano_pagina, cedula_actor, cedula_demandado)
+        if registros is not None:
+            print(f"Página {pagina}:")
+            print(registros)
+        else:
+            print(f"Error al obtener la página {pagina}")
+
+        time.sleep(2) # Pausa de 2 segundos entre cada solicitud
+
+if __name__ == "__main__":
+    cedula_actor = '0968599020001'
+    cedula_demandado = ''
+    main(cedula_actor, cedula_demandado)
