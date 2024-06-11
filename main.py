@@ -1,5 +1,6 @@
 import time
-from funciones_consulta import obtener_numero_registros, obtener_registros, obtener_detalle_registro
+from funciones_consulta import obtener_numero_registros, obtener_registros, obtener_detalle_registro, obtener_actuaciones_judiciales
+from utilidades import guardar_en_csv, guardar_en_json
 
 
 def obtener_registros_con_detalles(cedula_actor='', cedula_demandado=''):
@@ -21,31 +22,57 @@ def obtener_registros_con_detalles(cedula_actor='', cedula_demandado=''):
         if registros is not None:
             print(f"Obteniendo detalles de la página {pagina}...")
             for registro in registros:
-                id_juicio = registro.get('idJuicio')
-                if id_juicio:
-                    detalles = obtener_detalle_registro(id_juicio)
-                    if detalles:
-                        registro['detalles'] = detalles
-                        registros_con_detalles.append(registro)
-                    else:
-                        print(f"Error al obtener detalles para el idJuicio {id_juicio}")
+                detalles = obtener_detalle_registro(registro['idJuicio'])
+                if detalles:
+                    registro['detalles'] = detalles
+                    registros_con_detalles.append(registro)
                 else:
-                    print("El registro no tiene idJuicio")
+                    print(f"Error al obtener detalles para el registro con idJuicio {registro['idJuicio']}")
 
-            time.sleep(2)  # Pausa de 2 segundos entre cada solicitud
+            # time.sleep(2)  # Pausa de 2 segundos entre cada solicitud
         else:
             print(f"Error al obtener la página {pagina}")
 
     return registros_con_detalles
 
+
+def obtener_registros_con_detalles_y_actuaciones(cedula_actor='', cedula_demandado=''):
+    registros_con_detalles = obtener_registros_con_detalles(cedula_actor, cedula_demandado)
+    if registros_con_detalles:
+        for registro in registros_con_detalles:
+            detalles = registro.get('detalles', [])
+            for detalle in detalles:
+                lst_incidente_judicatura = detalle.get('lstIncidenteJudicatura', [])
+                for incidente_judicatura in lst_incidente_judicatura:
+                    id_movimiento_juicio_incidente = incidente_judicatura.get('idMovimientoJuicioIncidente')
+                    id_juicio = detalle.get('idJuicio')
+                    id_judicatura = incidente_judicatura.get('idJudicaturaDestino')
+                    id_incidente_judicatura = incidente_judicatura.get('idIncidenteJudicatura')
+                    nombre_judicatura = incidente_judicatura.get('nombreJudicatura')
+
+                    actuaciones_judiciales = obtener_actuaciones_judiciales(id_movimiento_juicio_incidente, id_juicio, id_judicatura, id_incidente_judicatura, nombre_judicatura)
+                    if actuaciones_judiciales:
+                        incidente_judicatura['actuacionesJudiciales'] = actuaciones_judiciales
+                    else:
+                        print(f"Error al obtener actuaciones judiciales para el incidente judicatura con id {id_incidente_judicatura}")
+
+                    time.sleep(2)  # Pausa de 2 segundos entre cada solicitud
+
+    return registros_con_detalles
+
+
 if __name__ == "__main__":
     cedula_actor = '0968599020001'
     cedula_demandado = ''
 
-    registros_con_detalles = obtener_registros_con_detalles(cedula_actor, cedula_demandado)
-    if registros_con_detalles:
-        print("Registros con detalles obtenidos exitosamente:")
-        for registro in registros_con_detalles:
+    registros_con_detalles_y_actuaciones = obtener_registros_con_detalles_y_actuaciones(cedula_actor, cedula_demandado)
+
+    guardar_en_csv(registros_con_detalles_y_actuaciones)
+    guardar_en_json(registros_con_detalles_y_actuaciones)
+
+    if registros_con_detalles_y_actuaciones:
+        print("Registros con detalles y actuaciones judiciales obtenidos exitosamente:")
+        for registro in registros_con_detalles_y_actuaciones:
             print(registro)
     else:
-        print("No se pudieron obtener registros con detalles.")
+        print("No se pudieron obtener registros con detalles y actuaciones judiciales.")

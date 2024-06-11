@@ -160,3 +160,30 @@ def obtener_detalle_registro(id_juicio):
         print('Error en la solicitud:', response.status_code)
         print('Detalle:', response.text)
         return None
+
+
+def obtener_actuaciones_judiciales(id_movimiento_juicio_incidente, id_juicio, id_judicatura, id_incidente_judicatura, nombre_judicatura):
+    url = 'https://api.funcionjudicial.gob.ec/EXPEL-CONSULTA-CAUSAS-SERVICE/api/consulta-causas/informacion/actuacionesJudiciales'
+    payload = {
+        "idMovimientoJuicioIncidente": id_movimiento_juicio_incidente,
+        "idJuicio": id_juicio,
+        "idJudicatura": id_judicatura,
+        "idIncidenteJudicatura": id_incidente_judicatura,
+        "aplicativo": "web",
+        "nombreJudicatura": nombre_judicatura,
+        "incidente": 1
+    }
+    headers = {
+        'Accept': 'application/vnd.api.v1+json',
+        'Access-Control-Allow-Origin': 'https://procesosjudiciales.funcionjudicial.gob.ec',
+        'Access-Control-Allow-Credentials': 'true'
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print('Error en la solicitud:', response.status_code)
+        print('Detalle:', response.text)
+        return None
