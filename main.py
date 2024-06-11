@@ -28,24 +28,19 @@ def obtener_registros_con_detalles(cedula_actor='', cedula_demandado=''):
                     registros_con_detalles.append(registro)
                 else:
                     print(f"Error al obtener detalles para el registro con idJuicio {registro['idJuicio']}")
-
-            # time.sleep(2)  # Pausa de 2 segundos entre cada solicitud
         else:
             print(f"Error al obtener la página {pagina}")
 
     return registros_con_detalles
 
-
 def obtener_registros_con_detalles_y_actuaciones(cedula_actor='', cedula_demandado=''):
     registros_con_detalles = obtener_registros_con_detalles(cedula_actor, cedula_demandado)
     if registros_con_detalles:
         for registro in registros_con_detalles:
-            detalles = registro.get('detalles', [])
-            for detalle in detalles:
-                lst_incidente_judicatura = detalle.get('lstIncidenteJudicatura', [])
-                for incidente_judicatura in lst_incidente_judicatura:
+            for detalle in registro.get('detalles', []):
+                for incidente_judicatura in detalle.get('lstIncidenteJudicatura', []):
                     id_movimiento_juicio_incidente = incidente_judicatura.get('idMovimientoJuicioIncidente')
-                    id_juicio = detalle.get('idJuicio')
+                    id_juicio = registro.get('idJuicio')
                     id_judicatura = incidente_judicatura.get('idJudicaturaDestino')
                     id_incidente_judicatura = incidente_judicatura.get('idIncidenteJudicatura')
                     nombre_judicatura = incidente_judicatura.get('nombreJudicatura')
