@@ -1,16 +1,19 @@
-from fastapi import FastAPI, Request
-from fastapi_users import FastAPIUsers, BaseUserManager, schemas
-from fastapi_users.authentication import JWTStrategy, AuthenticationBackend, BearerTransport
+# auth.py
+from sqlalchemy import create_engine
+from fastapi_users import BaseUserManager, schemas
+from fastapi_users.authentication import JWTStrategy
 from fastapi_users.db import SQLAlchemyUserDatabase, SQLAlchemyBaseUserTable
-from sqlalchemy import create_engine, Column, Integer, String, Boolean
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from typing import Optional
+from fastapi import Request
+from fastapi_users.authentication import JWTAuthentication
 
 DATABASE_URL = "sqlite:///./test.db"
 SECRET = "SECRET"
 
-Base: DeclarativeMeta = declarative_base()
+Base = declarative_base()
 
 class UserTable(Base, SQLAlchemyBaseUserTable[int]):
     id = Column(Integer, primary_key=True, index=True)
@@ -32,18 +35,6 @@ def get_user_db():
     db = SessionLocal()
     yield SQLAlchemyUserDatabase(UserTable, db)
 
-# Define the Bearer transport
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
-
-def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=SECRET, lifetime_seconds=3600)
-
-auth_backend = AuthenticationBackend(
-    name="jwt",
-    transport=bearer_transport,
-    get_strategy=get_jwt_strategy,
-)
-
 # Define the user schemas
 class UserRead(schemas.BaseUser[int]):
     id: int
@@ -53,16 +44,7 @@ class UserCreate(schemas.BaseUserCreate):
     email: str
     password: str
 
-fastapi_users = FastAPIUsers(
-    get_user_manager=get_user_db,
-    auth_backends=[auth_backend]
-)
-
-app = FastAPI()
-
-app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
-    tags=["auth"]
-)
+# JWT Authentication
+jwt_authentication = JWTAuthentication(secret=SECRET, lifetime_seconds=3600)
+jwt_strategy = JWTStrategy(secret=SECRET)
 
