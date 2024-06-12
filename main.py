@@ -44,6 +44,7 @@ def get_procesos_con_detalles_y_actuaciones(payload: Payload):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/procesos/{id_juicio}")
 def get_detalle_y_actuaciones(id_juicio: str):
     try:

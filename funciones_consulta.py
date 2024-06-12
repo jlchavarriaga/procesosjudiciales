@@ -1,6 +1,31 @@
 import requests
 
 
+def obtener_info_proceso(id_juicio):
+    url = f'https://api.funcionjudicial.gob.ec/EXPEL-CONSULTA-CAUSAS-CLEX-SERVICE/api/consulta-causas-clex/informacion/getIncidenteJudicatura/{id_juicio}'
+    headers = {
+        'Accept': 'application/vnd.api.v1+json',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Accept-Language': 'es-419,es-US;q=0.9,es;q=0.8,en;q=0.7,pt;q=0.6',
+        'Connection': 'keep-alive',
+        'Host': 'api.funcionjudicial.gob.ec',
+        'Referer': 'https://procesosjudiciales.funcionjudicial.gob.ec/',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print('Error en la solicitud:', response.status_code)
+        print('Detalle:', response.text)
+        return None
+
+
 def obtener_numero_registros(cedula_actor='', cedula_demandado=''):
     url = 'https://api.funcionjudicial.gob.ec/EXPEL-CONSULTA-CAUSAS-SERVICE/api/consulta-causas/informacion/contarCausas'
     payload = {

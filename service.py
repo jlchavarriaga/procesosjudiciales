@@ -1,5 +1,5 @@
 import time
-from funciones_consulta import obtener_numero_registros, obtener_registros, obtener_detalle_registro, obtener_actuaciones_judiciales
+from funciones_consulta import obtener_numero_registros, obtener_registros, obtener_detalle_registro, obtener_actuaciones_judiciales, obtener_info_proceso
 from utilidades import guardar_en_csv, guardar_en_json
 
 def obtener_solo_registros(cedula_actor='', cedula_demandado=''):
@@ -60,6 +60,7 @@ def obtener_registros_con_detalles(cedula_actor='', cedula_demandado=''):
 
 def obtener_detalle_y_actuaciones_de_proceso(id_juicio):
     try:
+        info_proceso = obtener_info_proceso(id_juicio)
         detalle = obtener_detalle_registro(id_juicio)
         if detalle:
             print(f"Detalle obtenido: {detalle}")
@@ -70,7 +71,11 @@ def obtener_detalle_y_actuaciones_de_proceso(id_juicio):
                 procesar_detalle(detalle, id_juicio)
             else:
                 print(f"Tipo inesperado de detalle: {type(detalle)}")
-        return detalle
+        resultado = {
+            'info_proceso': info_proceso,
+            'detalle': detalle
+        }
+        return resultado
     except Exception as e:
         print(f"Error en obtener_detalle_y_actuaciones_de_proceso: {str(e)}")
         return None
