@@ -1,73 +1,57 @@
-import time
-from funciones_consulta import obtener_numero_registros, obtener_registros, obtener_detalle_registro, obtener_actuaciones_judiciales
-from utilidades import guardar_en_csv, guardar_en_json
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+from service import (
+    obtener_solo_registros,
+    obtener_registros_con_detalles,
+    obtener_registros_con_detalles_y_actuaciones,
+    obtener_detalle_y_actuaciones_de_proceso
+)
 
+app = FastAPI()
 
-def obtener_registros_con_detalles(cedula_actor='', cedula_demandado=''):
-    total_registros = obtener_numero_registros(cedula_actor, cedula_demandado)
-    if total_registros == 0:
-        print("No se encontraron registros.")
-        return None
+class Payload(BaseModel):
+    cedula_actor: Optional[str] = ''
+    cedula_demandado: Optional[str] = ''
 
-    tamano_pagina = 10
-    total_paginas = (total_registros + tamano_pagina - 1) // tamano_pagina  # Redondeo hacia arriba
+@app.post("/procesos/basicos")
+def get_solo_procesos(payload: Payload):
+    try:
+        registros = obtener_solo_registros(payload.cedula_actor, payload.cedula_demandado)
+        if not registros:
+            raise HTTPException(status_code=404, detail="No se encontraron registros.")
+        return registros
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    print(f"Total de registros: {total_registros}")
-    print(f"Total de páginas: {total_paginas}")
+@app.post("/procesos/detalles")
+def get_procesos_con_detalles(payload: Payload):
+    try:
+        registros = obtener_registros_con_detalles(payload.cedula_actor, payload.cedula_demandado)
+        if not registros:
+            raise HTTPException(status_code=404, detail="No se encontraron registros.")
+        return registros
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    registros_con_detalles = []
+@app.post("/procesos/detalles_actuaciones")
+def get_procesos_con_detalles_y_actuaciones(payload: Payload):
+    try:
+        registros = obtener_registros_con_detalles_y_actuaciones(payload.cedula_actor, payload.cedula_demandado)
+        if not registros:
+            raise HTTPException(status_code=404, detail="No se encontraron registros.")
+        return registros
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    for pagina in range(1, total_paginas + 1):
-        registros = obtener_registros(pagina, tamano_pagina, cedula_actor, cedula_demandado)
-        if registros is not None:
-            print(f"Obteniendo detalles de la página {pagina}...")
-            for registro in registros:
-                detalles = obtener_detalle_registro(registro['idJuicio'])
-                if detalles:
-                    registro['detalles'] = detalles
-                    registros_con_detalles.append(registro)
-                else:
-                    print(f"Error al obtener detalles para el registro con idJuicio {registro['idJuicio']}")
-        else:
-            print(f"Error al obtener la página {pagina}")
-
-    return registros_con_detalles
-
-def obtener_registros_con_detalles_y_actuaciones(cedula_actor='', cedula_demandado=''):
-    registros_con_detalles = obtener_registros_con_detalles(cedula_actor, cedula_demandado)
-    if registros_con_detalles:
-        for registro in registros_con_detalles:
-            for detalle in registro.get('detalles', []):
-                for incidente_judicatura in detalle.get('lstIncidenteJudicatura', []):
-                    id_movimiento_juicio_incidente = incidente_judicatura.get('idMovimientoJuicioIncidente')
-                    id_juicio = registro.get('idJuicio')
-                    id_judicatura = incidente_judicatura.get('idJudicaturaDestino')
-                    id_incidente_judicatura = incidente_judicatura.get('idIncidenteJudicatura')
-                    nombre_judicatura = incidente_judicatura.get('nombreJudicatura')
-
-                    actuaciones_judiciales = obtener_actuaciones_judiciales(id_movimiento_juicio_incidente, id_juicio, id_judicatura, id_incidente_judicatura, nombre_judicatura)
-                    if actuaciones_judiciales:
-                        incidente_judicatura['actuacionesJudiciales'] = actuaciones_judiciales
-                    else:
-                        print(f"Error al obtener actuaciones judiciales para el incidente judicatura con id {id_incidente_judicatura}")
-
-                    time.sleep(2)  # Pausa de 2 segundos entre cada solicitud
-
-    return registros_con_detalles
-
-
-if __name__ == "__main__":
-    cedula_actor = '0968599020001'
-    cedula_demandado = ''
-
-    registros_con_detalles_y_actuaciones = obtener_registros_con_detalles_y_actuaciones(cedula_actor, cedula_demandado)
-
-    guardar_en_csv(registros_con_detalles_y_actuaciones)
-    guardar_en_json(registros_con_detalles_y_actuaciones)
-
-    if registros_con_detalles_y_actuaciones:
-        print("Registros con detalles y actuaciones judiciales obtenidos exitosamente:")
-        for registro in registros_con_detalles_y_actuaciones:
-            print(registro)
-    else:
-        print("No se pudieron obtener registros con detalles y actuaciones judiciales.")
+@app.get("/procesos/{id_juicio}")
+def get_detalle_y_actuaciones(id_juicio: str):
+    try:
+        print(f"Recibido id_juicio: {id_juicio}")
+        detalle = obtener_detalle_y_actuaciones_de_proceso(id_juicio)
+        if not detalle:
+            raise HTTPException(status_code=404, detail="No se encontraron detalles para el proceso.")
+        return detalle
+    except Exception as e:
+        print(f"Error en get_detalle_y_actuaciones: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

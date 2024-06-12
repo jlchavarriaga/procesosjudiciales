@@ -7,7 +7,7 @@ from funciones_consulta import (
     obtener_detalle_registro,
     obtener_actuaciones_judiciales
 )
-from main import obtener_registros_con_detalles_y_actuaciones
+from service import obtener_registros_con_detalles_y_actuaciones
 
 
 class TestFuncionesConsulta(unittest.TestCase):
