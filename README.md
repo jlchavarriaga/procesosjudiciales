@@ -19,12 +19,30 @@ Ejecutar las Pruebas
 Ejecutar la Aplicación
     uvicorn main:app --reload
 
+Autenticacion
+   1 Registro:
+        Ruta: POST /auth/register
+            {
+            "email": "user@example.com",
+            "password": "password"
+            }
+    2. Inicio de sesión:
+        Ruta: POST /auth/jwt/login
+        usaremos  form-data en lugar de raw en el body (desde postman)
+            {
+            "username": "user@example.com",
+            "password": "password"
+            }
+
+Uso de la plataforma
     1. Obtener solo los procesos básicos:
         Ruta: POST /procesos/basicos
         {
             "cedula_actor": "0968599020001",
             "cedula_demandado": ""
         }
+        incluir el token JWT en el encabezado Authorization como Bearer <token>
+
     2. Obtener procesos con detalles:
         Ruta: POST /procesos/detalles
         {
@@ -40,6 +58,7 @@ Ejecutar la Aplicación
     4. Obtener detalle de un proceso específico junto con sus actuaciones judiciales:
         Ruta: GET /procesos/{id_juicio}
         Ejemplo de URL: GET /procesos/12345
+        incluir el token JWT en el encabezado Authorization como Bearer <token>
 
 
 

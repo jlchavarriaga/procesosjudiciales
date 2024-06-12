@@ -1,4 +1,9 @@
-from fastapi import FastAPI, HTTPException
+#main.py
+
+from fastapi import FastAPI, HTTPException, Depends
+
+from auth import fastapi_users, jwt_authentication, UserTable
+
 from pydantic import BaseModel
 from typing import List, Optional
 from service import (
@@ -8,6 +13,11 @@ from service import (
     obtener_detalle_y_actuaciones_de_proceso
 )
 
+
+from auth import Base, engine
+
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 
 class Payload(BaseModel):
@@ -15,7 +25,8 @@ class Payload(BaseModel):
     cedula_demandado: Optional[str] = ''
 
 @app.post("/procesos/basicos")
-def get_solo_procesos(payload: Payload):
+# def get_solo_procesos(payload: Payload):
+async def get_solo_procesos(payload: Payload, user: UserTable = Depends(fastapi_users.current_user())):
     try:
         registros = obtener_solo_registros(payload.cedula_actor, payload.cedula_demandado)
         if not registros:
@@ -46,7 +57,8 @@ def get_procesos_con_detalles_y_actuaciones(payload: Payload):
 
 
 @app.get("/procesos/{id_juicio}")
-def get_detalle_y_actuaciones(id_juicio: str):
+# def get_detalle_y_actuaciones(id_juicio: str):
+async def get_detalle_y_actuaciones(id_juicio: str, user: UserTable = Depends(fastapi_users.current_user())):
     try:
         print(f"Recibido id_juicio: {id_juicio}")
         detalle = obtener_detalle_y_actuaciones_de_proceso(id_juicio)
