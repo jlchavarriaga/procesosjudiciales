@@ -2,7 +2,6 @@ import time
 from funciones_consulta import obtener_numero_registros, obtener_registros, obtener_detalle_registro, obtener_actuaciones_judiciales
 from utilidades import guardar_en_csv, guardar_en_json
 
-
 def obtener_solo_registros(cedula_actor='', cedula_demandado=''):
     total_registros = obtener_numero_registros(cedula_actor, cedula_demandado)
     if total_registros == 0:
@@ -60,45 +59,21 @@ def obtener_registros_con_detalles(cedula_actor='', cedula_demandado=''):
 
 
 def obtener_detalle_y_actuaciones_de_proceso(id_juicio):
-    detalle = obtener_detalle_registro(id_juicio)
-    if detalle:
-        for incidente_judicatura in detalle.get('lstIncidenteJudicatura', []):
-            id_movimiento_juicio_incidente = incidente_judicatura.get('idMovimientoJuicioIncidente')
-            id_judicatura = incidente_judicatura.get('idJudicaturaDestino')
-            id_incidente_judicatura = incidente_judicatura.get('idIncidenteJudicatura')
-            nombre_judicatura = incidente_judicatura.get('nombreJudicatura')
-
-            actuaciones_judiciales = obtener_actuaciones_judiciales(id_movimiento_juicio_incidente, id_juicio, id_judicatura, id_incidente_judicatura, nombre_judicatura)
-            if actuaciones_judiciales:
-                incidente_judicatura['actuacionesJudiciales'] = actuaciones_judiciales
+    try:
+        detalle = obtener_detalle_registro(id_juicio)
+        if detalle:
+            print(f"Detalle obtenido: {detalle}")
+            if isinstance(detalle, list):
+                for item in detalle:
+                    procesar_detalle(item, id_juicio)
+            elif isinstance(detalle, dict):
+                procesar_detalle(detalle, id_juicio)
             else:
-                print(f"Error al obtener actuaciones judiciales para el incidente judicatura con id {id_incidente_judicatura}")
-
-    return detalle
-
-
-def obtener_registros_con_detalles_y_actuaciones(cedula_actor='', cedula_demandado=''):
-    registros_con_detalles = obtener_registros_con_detalles(cedula_actor, cedula_demandado)
-    if registros_con_detalles:
-        for registro in registros_con_detalles:
-            for detalle in registro.get('detalles', []):
-                for incidente_judicatura in detalle.get('lstIncidenteJudicatura', []):
-                    id_movimiento_juicio_incidente = incidente_judicatura.get('idMovimientoJuicioIncidente')
-                    id_juicio = registro.get('idJuicio')
-                    id_judicatura = incidente_judicatura.get('idJudicaturaDestino')
-                    id_incidente_judicatura = incidente_judicatura.get('idIncidenteJudicatura')
-                    nombre_judicatura = incidente_judicatura.get('nombreJudicatura')
-
-                    actuaciones_judiciales = obtener_actuaciones_judiciales(id_movimiento_juicio_incidente, id_juicio, id_judicatura, id_incidente_judicatura, nombre_judicatura)
-                    if actuaciones_judiciales:
-                        incidente_judicatura['actuacionesJudiciales'] = actuaciones_judiciales
-                    else:
-                        print(f"Error al obtener actuaciones judiciales para el incidente judicatura con id {id_incidente_judicatura}")
-
-                    time.sleep(2)  # Pausa de 2 segundos entre cada solicitud
-
-    return registros_con_detalles
-
+                print(f"Tipo inesperado de detalle: {type(detalle)}")
+        return detalle
+    except Exception as e:
+        print(f"Error en obtener_detalle_y_actuaciones_de_proceso: {str(e)}")
+        return None
 
 def procesar_detalle(detalle, id_juicio):
     try:
@@ -125,6 +100,21 @@ def procesar_detalle(detalle, id_juicio):
             print(f"El detalle no es un diccionario: {detalle}")
     except Exception as e:
         print(f"Error en procesar_detalle: {str(e)}")
+
+def obtener_registros_con_detalles_y_actuaciones(cedula_actor='', cedula_demandado=''):
+    registros_con_detalles = obtener_registros_con_detalles(cedula_actor, cedula_demandado)
+    if registros_con_detalles:
+        for registro in registros_con_detalles:
+            if isinstance(registro['detalles'], list):
+                for detalle in registro['detalles']:
+                    procesar_detalle(detalle, registro.get('idJuicio'))
+            elif isinstance(registro['detalles'], dict):
+                procesar_detalle(registro['detalles'], registro.get('idJuicio'))
+            else:
+                print(f"Tipo inesperado de detalles: {type(registro['detalles'])}")
+            time.sleep(2)  # Pausa de 2 segundos entre cada solicitud
+
+    return registros_con_detalles
 
 
 if __name__ == "__main__":
